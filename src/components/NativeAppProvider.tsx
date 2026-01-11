@@ -1,6 +1,7 @@
 import { useEffect, ReactNode } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useNativeApp } from '@/hooks/useNativeApp';
+import { initializeAdMob } from '@/services/admobService';
 
 interface NativeAppProviderProps {
   children: ReactNode;
@@ -12,6 +13,19 @@ interface NativeAppProviderProps {
  */
 export function NativeAppProvider({ children }: NativeAppProviderProps) {
   const { isNative, isAndroid } = useNativeApp();
+
+  // Initialize AdMob on native platforms
+  useEffect(() => {
+    if (isNative) {
+      initializeAdMob().then((success) => {
+        if (success) {
+          console.log('[NativeAppProvider] AdMob initialized successfully');
+        } else {
+          console.log('[NativeAppProvider] AdMob initialization skipped or failed');
+        }
+      });
+    }
+  }, [isNative]);
 
   // Add native-specific CSS class to body for styling hooks
   useEffect(() => {
