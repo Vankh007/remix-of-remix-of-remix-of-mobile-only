@@ -109,7 +109,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (error) return { error };
         if (!data?.url) return { error: new Error('No OAuth URL returned') };
 
-        await Browser.open({ url: data.url });
+        // Use presentationStyle to ensure in-app browser (Chrome Custom Tabs on Android)
+        await Browser.open({ 
+          url: data.url,
+          windowName: '_self',
+          presentationStyle: 'popover',
+        });
         return { error: null };
       } catch (error: any) {
         console.error('Native Google Sign-In error:', error);
