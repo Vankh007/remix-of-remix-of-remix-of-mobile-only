@@ -2,32 +2,13 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.plexkhmerzoon',
-  appName: 'KHMERZOON',
+  appName: 'PlexKhmerZoon',
   webDir: 'dist',
-  android: {
-    backgroundColor: '#00000000',
-    allowMixedContent: true,
-    appendUserAgent: 'KHMERZOON-Native',
-  },
-  ios: {
-    backgroundColor: '#00000000',
-    contentInset: 'automatic',
-    preferredContentMode: 'mobile',
+  server: {
+    url: 'https://5a59b6e4-40f6-4249-9156-cd090c989a64.lovableproject.com?forceHideBadge=true',
+    cleartext: true
   },
   plugins: {
-    StatusBar: {
-      overlaysWebView: true,
-      style: 'DARK',
-      backgroundColor: '#00000000'
-    },
-    Keyboard: {
-      resize: 'body',
-      style: 'dark',
-      resizeOnFullScreen: true
-    },
-    App: {
-      launchShowDuration: 0
-    },
     SocialLogin: {
       google: {
         webClientId: '956107790298-nvsmcmq5r8hb2j0ghbh5opji2olpk3ps.apps.googleusercontent.com'
