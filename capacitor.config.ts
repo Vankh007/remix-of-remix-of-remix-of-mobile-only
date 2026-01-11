@@ -1,13 +1,19 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+const DEV_SERVER_URL = process.env.CAPACITOR_SERVER_URL;
+
 const config: CapacitorConfig = {
   appId: 'com.plexkhmerzoon',
-  appName: 'PlexKhmerZoon',
+  appName: 'Khmerzoon-Tv',
   webDir: 'dist',
-  server: {
-    url: 'https://5a59b6e4-40f6-4249-9156-cd090c989a64.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  },
+  ...(DEV_SERVER_URL
+    ? {
+        server: {
+          url: DEV_SERVER_URL,
+          cleartext: true,
+        },
+      }
+    : {}),
   android: {
     backgroundColor: '#000000',
     allowMixedContent: true,
@@ -15,15 +21,16 @@ const config: CapacitorConfig = {
   plugins: {
     SocialLogin: {
       google: {
-        webClientId: '956107790298-nvsmcmq5r8hb2j0ghbh5opji2olpk3ps.apps.googleusercontent.com'
-      }
+        webClientId: '956107790298-nvsmcmq5r8hb2j0ghbh5opji2olpk3ps.apps.googleusercontent.com',
+      },
     },
     AdMob: {
       appId: 'ca-app-pub-5699578431552008~3848955446',
-      requestTrackingAuthorization: true
-    }
-  }
+      requestTrackingAuthorization: true,
+    },
+  },
 };
 
 export default config;
+
 

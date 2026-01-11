@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Copy, Check, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getPublicSiteUrl } from '@/lib/publicSiteUrl';
 
 interface ShareDialogProps {
   open: boolean;
@@ -34,7 +35,7 @@ export const ShareDialog = ({
   const { toast } = useToast();
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const baseUrl = window.location.origin;
+  const baseUrl = getPublicSiteUrl();
 
   // Generate URLs based on content type
   const watchUrl = contentType === 'series' && seasonNumber && episodeNumber
