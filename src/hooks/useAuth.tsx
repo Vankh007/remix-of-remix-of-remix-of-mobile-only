@@ -2,7 +2,6 @@ import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { Capacitor } from '@capacitor/core';
-import { SocialLogin } from '@capgo/capacitor-social-login';
 
 interface AuthContextType {
   user: User | null;
@@ -16,30 +15,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Initialize social login for native platforms
-const initializeSocialLogin = async () => {
-  if (Capacitor.isNativePlatform()) {
-    try {
-      await SocialLogin.initialize({
-        google: {
-          webClientId: '956107790298-nvsmcmq5r8hb2j0ghbh5opji2olpk3ps.apps.googleusercontent.com',
-        },
-      });
-    } catch (error) {
-      console.error('Error initializing social login:', error);
-    }
-  }
-};
-
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize social login for native platforms
-    initializeSocialLogin();
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -83,34 +64,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
-    // Use native Google Sign-In for Android/iOS apps
+    // For native Android/iOS apps, use OAuth with a custom URL scheme
     if (Capacitor.isNativePlatform()) {
       try {
-        const result = await SocialLogin.login({
+        // Use Supabase OAuth with proper redirect for native apps
+        const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            scopes: ['email', 'profile'],
-          },
-        });
-
-        if (result?.provider === 'google' && result.result) {
-          const { idToken, accessToken } = result.result as { idToken?: string; accessToken?: string };
-          
-          if (idToken) {
-            // Sign in to Supabase with the Google ID token
-            const { error } = await supabase.auth.signInWithIdToken({
-              provider: 'google',
-              token: idToken,
-              access_token: accessToken,
-            });
-            
-            return { error };
-          } else {
-            return { error: new Error('No ID token received from Google') };
+            redirectTo: 'com.plexkhmerzoon://auth/callback',
+            skipBrowserRedirect: false,
           }
-        }
-        
-        return { error: new Error('Google sign-in was cancelled') };
+        });
+        return { error };
       } catch (error: any) {
         console.error('Native Google Sign-In error:', error);
         return { error };
