@@ -134,9 +134,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         const res = await SocialLogin.login({
           provider: 'google',
-          options: {
-            scopes: ['email', 'profile'],
-          },
+          // NOTE: On Android, Capgo SocialLogin requires a native MainActivity modification
+          // to use custom scopes. To avoid the runtime error you’re seeing, we don’t pass scopes here.
+          options: {},
         });
 
         console.log('[Auth] SocialLogin response:', JSON.stringify(res));
