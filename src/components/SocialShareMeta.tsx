@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { getCanonicalUrl, toAbsoluteUrl } from '@/lib/publicSiteUrl';
 
 interface SocialShareMetaProps {
   title: string;
@@ -11,12 +12,6 @@ export const SocialShareMeta = ({ title, description, image, type = 'website' }:
   useEffect(() => {
     const previousTitle = document.title;
 
-    // Update document title
-    if (title) {
-      document.title = title;
-    }
-
-    // Update meta tags
     const updateMetaTag = (property: string, content: string) => {
       let element = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
       if (!element) {
@@ -30,24 +25,51 @@ export const SocialShareMeta = ({ title, description, image, type = 'website' }:
       element.setAttribute('content', content);
     };
 
-    if (title) updateMetaTag('og:title', title);
-    updateMetaTag('og:description', description);
-    updateMetaTag('og:type', type);
-    if (image) {
-      updateMetaTag('og:image', image);
-    }
-    updateMetaTag('twitter:card', 'summary_large_image');
-    if (title) updateMetaTag('twitter:title', title);
-    updateMetaTag('twitter:description', description);
-    if (image) {
-      updateMetaTag('twitter:image', image);
+    const setCanonical = (href: string) => {
+      let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'canonical';
+        document.head.appendChild(link);
+      }
+      link.href = href;
+    };
+
+    const canonicalUrl = getCanonicalUrl();
+
+    // Title
+    if (title) {
+      document.title = title;
+      updateMetaTag('og:title', title);
+      updateMetaTag('twitter:title', title);
     }
 
+    // Description
+    updateMetaTag('og:description', description);
+    updateMetaTag('twitter:description', description);
+
+    // URL
+    updateMetaTag('og:url', canonicalUrl);
+    setCanonical(canonicalUrl);
+
+    // Type
+    updateMetaTag('og:type', type);
+
+    // Images
+    const absoluteImage = toAbsoluteUrl(image);
+    if (absoluteImage) {
+      updateMetaTag('og:image', absoluteImage);
+      updateMetaTag('twitter:image', absoluteImage);
+    }
+
+    // Twitter card
+    updateMetaTag('twitter:card', 'summary_large_image');
+
     return () => {
-      // Restore previous title (e.g., global Site Title - Site Detail)
       document.title = previousTitle;
     };
   }, [title, description, image, type]);
 
   return null;
 };
+

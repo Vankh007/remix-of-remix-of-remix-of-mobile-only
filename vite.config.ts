@@ -22,9 +22,9 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['icon-512x512.png', 'icon-192x192.png'],
       manifest: {
-        name: 'KHMERZOON',
-        short_name: 'KHMERZOON',
-        description: 'Watch your favorite movies and series on KHMERZOON',
+        name: 'Khmerzoon-Tv',
+        short_name: 'Khmerzoon-Tv',
+        description: 'Khmerzoon-Tv — stream movies and series.',
         theme_color: '#DC2626',
         background_color: '#000000',
         display: 'standalone',
