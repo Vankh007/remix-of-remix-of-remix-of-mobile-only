@@ -44,24 +44,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    const handle = App.addListener('appUrlOpen', async ({ url }) => {
-      // Only handle our Supabase OAuth callback
-      if (!url?.startsWith('com.plexkhmerzoon://auth/callback')) return;
+    let listenerHandle: Awaited<ReturnType<typeof App.addListener>> | null = null;
 
-      try {
-        // Close the in-app browser (Chrome Custom Tabs / SFSafariViewController)
-        await Browser.close();
+    (async () => {
+      listenerHandle = await App.addListener('appUrlOpen', async ({ url }) => {
+        // Only handle our Supabase OAuth callback
+        if (!url?.startsWith('com.plexkhmerzoon://auth/callback')) return;
 
-        // Exchange the auth code for a Supabase session
-        const { error } = await supabase.auth.exchangeCodeForSession(url);
-        if (error) console.error('[Auth] exchangeCodeForSession error:', error);
-      } catch (error) {
-        console.error('[Auth] appUrlOpen handler error:', error);
-      }
-    });
+        try {
+          // Close the in-app browser (Chrome Custom Tabs / SFSafariViewController)
+          await Browser.close();
+
+          // Exchange the auth code for a Supabase session
+          const { error } = await supabase.auth.exchangeCodeForSession(url);
+          if (error) console.error('[Auth] exchangeCodeForSession error:', error);
+        } catch (error) {
+          console.error('[Auth] appUrlOpen handler error:', error);
+        }
+      });
+    })();
 
     return () => {
-      handle.remove();
+      listenerHandle?.remove();
     };
   }, []);
 
