@@ -127,9 +127,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
-    // Native: prefer real native Google login (no browser), then fallback to OAuth-in-app
+    // Native Android/iOS: Use native Google Sign-In (no browser redirect)
     if (Capacitor.isNativePlatform()) {
       try {
+        console.log('[Auth] Starting native Google Sign-In...');
+        
         const res = await SocialLogin.login({
           provider: 'google',
           options: {
@@ -137,48 +139,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           },
         });
 
-        const idToken = (res as any)?.result?.idToken as string | null | undefined;
-        if (idToken) {
-          const { error } = await supabase.auth.signInWithIdToken({
-            provider: 'google',
-            token: idToken,
-          });
+        console.log('[Auth] SocialLogin response:', JSON.stringify(res));
+
+        // Extract idToken from the response
+        const idToken = (res as any)?.result?.idToken;
+        
+        if (!idToken) {
+          console.error('[Auth] No idToken in response:', res);
+          return { error: new Error('No ID token received from Google Sign-In') };
+        }
+
+        console.log('[Auth] Got idToken, signing into Supabase...');
+        
+        // Sign in to Supabase using the Google ID token
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+        });
+
+        if (error) {
+          console.error('[Auth] Supabase signInWithIdToken error:', error);
           return { error };
         }
 
-        // If no idToken came back for some reason, fallback to OAuth
-        console.warn('[Auth] SocialLogin returned no idToken; falling back to OAuth');
-      } catch (error: any) {
-        console.warn('[Auth] Native SocialLogin failed; falling back to OAuth:', error);
-      }
-
-      try {
-        // Use implicit flow for native to avoid PKCE code_verifier issues
-        // (the in-app browser's localStorage is separate from the app's localStorage)
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: 'com.plexkhmerzoon://auth/callback',
-            skipBrowserRedirect: true,
-            queryParams: {
-              response_type: 'token', // Use implicit flow instead of PKCE
-            },
-          },
-        });
-
-        if (error) return { error };
-        if (!data?.url) return { error: new Error('No OAuth URL returned') };
-
-        // Use presentationStyle to ensure in-app browser (Chrome Custom Tabs on Android)
-        await Browser.open({
-          url: data.url,
-          windowName: '_self',
-          presentationStyle: 'popover',
-        });
+        console.log('[Auth] Successfully signed in:', data?.user?.email);
         return { error: null };
       } catch (error: any) {
-        console.error('Native Google Sign-In error:', error);
-        return { error };
+        console.error('[Auth] Native Google Sign-In failed:', error);
+        return { error: new Error(error?.message || 'Google Sign-In failed') };
       }
     }
 
