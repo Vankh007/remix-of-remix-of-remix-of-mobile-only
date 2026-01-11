@@ -4,16 +4,19 @@ import App from "./App.tsx";
 import "./index.css";
 
 // Register Service Worker for PWA (only on web)
+// Use VitePWA helper so updates apply immediately (prevents old cached UI after redirects/login).
+import { registerSW } from 'virtual:pwa-register';
+
 if ('serviceWorker' in navigator && !Capacitor.isNativePlatform()) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/sw.js', { scope: '/' })
-      .then((registration) => {
-        console.log('SW registered:', registration);
-      })
-      .catch((error) => {
-        console.log('SW registration failed:', error);
-      });
+  const updateSW = registerSW({
+    immediate: true,
+    onNeedRefresh() {
+      // Auto-apply the new service worker and reload to the latest build
+      updateSW(true);
+    },
+    onOfflineReady() {
+      console.log('PWA offline ready');
+    },
   });
 }
 

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
+import { SocialLogin } from '@capgo/capacitor-social-login';
 
 interface AuthContextType {
   user: User | null;
@@ -16,6 +17,9 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const GOOGLE_WEB_CLIENT_ID =
+  '956107790298-nvsmcmq5r8hb2j0ghbh5opji2olpk3ps.apps.googleusercontent.com';
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -38,6 +42,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  // Initialize native Google login (avoids browser/deeplink issues)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    SocialLogin.initialize({
+      google: {
+        webClientId: GOOGLE_WEB_CLIENT_ID,
+      },
+    }).catch((e) => console.warn('[Auth] SocialLogin.initialize failed:', e));
   }, []);
 
   // Handle deep-link callback for native OAuth (keeps auth flow inside the app)
@@ -112,8 +127,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
-    // Native: open OAuth inside the app (Custom Tabs) instead of bouncing to the external browser app
+    // Native: prefer real native Google login (no browser), then fallback to OAuth-in-app
     if (Capacitor.isNativePlatform()) {
+      try {
+        const res = await SocialLogin.login({
+          provider: 'google',
+          options: {
+            scopes: ['email', 'profile'],
+          },
+        });
+
+        const idToken = (res as any)?.result?.idToken as string | null | undefined;
+        if (idToken) {
+          const { error } = await supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token: idToken,
+          });
+          return { error };
+        }
+
+        // If no idToken came back for some reason, fallback to OAuth
+        console.warn('[Auth] SocialLogin returned no idToken; falling back to OAuth');
+      } catch (error: any) {
+        console.warn('[Auth] Native SocialLogin failed; falling back to OAuth:', error);
+      }
+
       try {
         // Use implicit flow for native to avoid PKCE code_verifier issues
         // (the in-app browser's localStorage is separate from the app's localStorage)
@@ -132,7 +170,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!data?.url) return { error: new Error('No OAuth URL returned') };
 
         // Use presentationStyle to ensure in-app browser (Chrome Custom Tabs on Android)
-        await Browser.open({ 
+        await Browser.open({
           url: data.url,
           windowName: '_self',
           presentationStyle: 'popover',
