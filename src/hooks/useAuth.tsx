@@ -55,9 +55,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Close the in-app browser (Chrome Custom Tabs / SFSafariViewController)
           await Browser.close();
 
-          // Exchange the auth code for a Supabase session
-          const { error } = await supabase.auth.exchangeCodeForSession(url);
-          if (error) console.error('[Auth] exchangeCodeForSession error:', error);
+          // For implicit flow, tokens are in the hash fragment (#access_token=...&refresh_token=...)
+          // Convert hash to search params format for parsing
+          const hashIndex = url.indexOf('#');
+          if (hashIndex !== -1) {
+            const hashParams = new URLSearchParams(url.substring(hashIndex + 1));
+            const accessToken = hashParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token');
+
+            if (accessToken) {
+              const { error } = await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken || '',
+              });
+              if (error) console.error('[Auth] setSession error:', error);
+            }
+          } else {
+            // Fallback: try exchangeCodeForSession for PKCE flow (might fail if code_verifier is missing)
+            const { error } = await supabase.auth.exchangeCodeForSession(url);
+            if (error) console.error('[Auth] exchangeCodeForSession error:', error);
+          }
         } catch (error) {
           console.error('[Auth] appUrlOpen handler error:', error);
         }
@@ -98,11 +115,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Native: open OAuth inside the app (Custom Tabs) instead of bouncing to the external browser app
     if (Capacitor.isNativePlatform()) {
       try {
+        // Use implicit flow for native to avoid PKCE code_verifier issues
+        // (the in-app browser's localStorage is separate from the app's localStorage)
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
             redirectTo: 'com.plexkhmerzoon://auth/callback',
             skipBrowserRedirect: true,
+            queryParams: {
+              response_type: 'token', // Use implicit flow instead of PKCE
+            },
           },
         });
 
