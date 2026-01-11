@@ -30,8 +30,9 @@ const config: CapacitorConfig = {
       },
     },
     AdMob: {
-      appId: 'ca-app-pub-5699578431552008~3848955446',
+      appId: 'ca-app-pub-4789683198372521~7914037351',
       requestTrackingAuthorization: true,
+      initializeForTesting: false,
     },
   },
 };
