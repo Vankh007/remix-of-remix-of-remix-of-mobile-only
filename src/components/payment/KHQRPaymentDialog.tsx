@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, CheckCircle2, AlertCircle, Wallet, QrCode, Download, Share2 } from 'lucide-react';
+import { Loader2, CheckCircle2, QrCode } from 'lucide-react';
 import { toast } from 'sonner';
-import QRCode from 'react-qr-code';
 import logo from '@/assets/khmerzoon.png';
+import { KHQRCodeImage } from './KHQRCodeImage';
 
 interface KHQRPaymentDialogProps {
   isOpen: boolean;
@@ -209,215 +209,6 @@ export const KHQRPaymentDialog = ({ isOpen, onClose, onSuccess }: KHQRPaymentDia
     onClose();
   };
 
-  const downloadQRCode = async () => {
-    if (!qrCode) return;
-
-    try {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      // Set canvas size (QR code + header space)
-      canvas.width = 800;
-      canvas.height = 900;
-
-      // Fill white background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Load and draw logo
-      const logoImg = new Image();
-      logoImg.crossOrigin = 'anonymous';
-      logoImg.src = logo;
-      
-      await new Promise((resolve) => {
-        logoImg.onload = resolve;
-      });
-
-      // Draw logo (centered at top)
-      const logoSize = 80;
-      ctx.drawImage(logoImg, (canvas.width - logoSize) / 2, 30, logoSize, logoSize);
-
-      // Draw app name
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 36px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('KHMERZOON', canvas.width / 2, 150);
-
-      // Generate QR code as SVG
-      const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svgElement.setAttribute('width', '600');
-      svgElement.setAttribute('height', '600');
-      svgElement.innerHTML = `<rect width="600" height="600" fill="#ffffff"/>`;
-      
-      // Create QR code SVG
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = `<svg width="600" height="600"><rect width="600" height="600" fill="#ffffff"/></svg>`;
-      
-      // Draw QR using external library rendering
-      const qrSvg = document.getElementById('qr-code-svg');
-      if (qrSvg) {
-        const qrImage = new Image();
-        const svgData = new XMLSerializer().serializeToString(qrSvg);
-        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(svgBlob);
-        
-        qrImage.src = url;
-        await new Promise((resolve) => {
-          qrImage.onload = resolve;
-        });
-
-        // Draw QR code (centered)
-        ctx.drawImage(qrImage, 100, 200, 600, 600);
-        URL.revokeObjectURL(url);
-      }
-
-      // Convert to blob and download
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `KHMERZOON-KHQR-${Date.now()}.png`;
-          link.click();
-          URL.revokeObjectURL(url);
-          toast.success('QR Code downloaded successfully');
-        }
-      });
-    } catch (error) {
-      console.error('Error downloading QR code:', error);
-      toast.error('Failed to download QR code');
-    }
-  };
-
-  const shareToBank = async () => {
-    if (!qrCode) return;
-
-    try {
-      // Get the QR code SVG element
-      const qrSvg = document.getElementById('qr-code-svg');
-      if (!qrSvg) {
-        toast.error('QR code not found');
-        return;
-      }
-
-      // Create canvas with header space
-      const canvas = document.createElement('canvas');
-      canvas.width = 800;
-      canvas.height = 900;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) {
-        toast.error('Canvas not supported');
-        return;
-      }
-
-      // Fill white background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Load and draw logo
-      const logoImg = new Image();
-      logoImg.crossOrigin = 'anonymous';
-      logoImg.src = logo;
-      
-      await new Promise((resolve) => {
-        logoImg.onload = resolve;
-      });
-
-      // Draw logo (centered at top)
-      const logoSize = 80;
-      ctx.drawImage(logoImg, (canvas.width - logoSize) / 2, 30, logoSize, logoSize);
-
-      // Draw app name
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 36px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('KHMERZOON', canvas.width / 2, 150);
-
-      // Convert SVG to image
-      const svgData = new XMLSerializer().serializeToString(qrSvg);
-      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(svgBlob);
-      
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = url;
-      });
-
-      // Draw QR code (centered below header)
-      ctx.drawImage(img, 100, 200, 600, 600);
-      URL.revokeObjectURL(url);
-
-      // Convert to blob
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob((b) => resolve(b), 'image/png', 1.0)
-      );
-
-      if (!blob) {
-        toast.error('Failed to create QR image');
-        return;
-      }
-
-      // Try Web Share API
-      const navAny = navigator as any;
-      if (navAny?.share) {
-        try {
-          const file = new File([blob], 'KHQR-Payment.png', { type: 'image/png' });
-          
-          // Check if we can share files
-          if (navAny.canShare && !navAny.canShare({ files: [file] })) {
-            throw new Error('File sharing not supported');
-          }
-
-          await navAny.share({
-            files: [file],
-            title: 'KHMERZOON KHQR Payment',
-            text: `Scan to pay $${parseFloat(amount).toFixed(2)}`,
-          });
-          
-          toast.success('QR code shared successfully');
-          return;
-        } catch (shareError: any) {
-          console.log('Share API error:', shareError);
-          
-          // If user didn't cancel, try fallback
-          if (shareError.name !== 'AbortError') {
-            // Fallback: download instead
-            const downloadUrl = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = `KHMERZOON-KHQR-${Date.now()}.png`;
-            link.click();
-            URL.revokeObjectURL(downloadUrl);
-            toast.success('QR code downloaded - Open in your banking app');
-            return;
-          } else {
-            // User cancelled share
-            return;
-          }
-        }
-      }
-
-      // If share API not available, download automatically
-      const downloadUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `KHMERZOON-KHQR-${Date.now()}.png`;
-      link.click();
-      URL.revokeObjectURL(downloadUrl);
-      toast.success('QR code downloaded - Open in your banking app');
-      
-    } catch (error) {
-      console.error('Error sharing:', error);
-      toast.error('Please use the Download button instead');
-    }
-  };
-
   const quickAmounts = [5, 10, 20, 50, 100];
 
   return (
@@ -489,65 +280,18 @@ export const KHQRPaymentDialog = ({ isOpen, onClose, onSuccess }: KHQRPaymentDia
 
           {paymentStatus === 'pending' && qrCode && (
             <div className="space-y-4">
-              <div className="flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-lg">
-                <QRCode id="qr-code-svg" value={qrCode} size={250} />
-              </div>
+              <KHQRCodeImage
+                qrCode={qrCode}
+                amount={parseFloat(amount)}
+                checking={checking}
+                onCheckPayment={manualCheckPayment}
+              />
 
-              <div className="text-center space-y-2">
-                <p className="text-lg font-semibold">Scan to Pay ${parseFloat(amount).toFixed(2)}</p>
-                {expiresAt && (
-                  <p className="text-xs text-muted-foreground">
-                    Expires at {new Date(expiresAt).toLocaleTimeString()}
-                  </p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="default"
-                  onClick={shareToBank}
-                  className="w-full"
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Open With
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={downloadQRCode}
-                  className="w-full"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <div className="h-2 w-2 bg-orange-500 rounded-full animate-pulse" />
-                Waiting for payment confirmation
-              </div>
-
-              <Button
-                variant="default"
-                onClick={manualCheckPayment}
-                disabled={checking}
-                className="w-full"
-              >
-                {checking ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Checking...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    I Have Paid - Check Status
-                  </>
-                )}
-              </Button>
-
-              <p className="text-xs text-center text-muted-foreground">
-                Already paid? Click the button above to verify your payment
-              </p>
+              {expiresAt && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Expires at {new Date(expiresAt).toLocaleTimeString()}
+                </p>
+              )}
 
               <Button
                 variant="outline"
