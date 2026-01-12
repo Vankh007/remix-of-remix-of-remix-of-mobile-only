@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { AdMob as AdMobImport } from '@capacitor-community/admob';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AppAd {
@@ -90,7 +91,7 @@ export function useAdMob() {
   useEffect(() => {
     const native = Capacitor.isNativePlatform();
     setIsNative(native);
-    
+
     if (native) {
       fetchAdsAndSettings();
     }
@@ -104,8 +105,15 @@ export function useAdMob() {
   }, [isNative, globalSettings]);
 
   const getAdMobPlugin = (): AdMobPlugin | null => {
+    // Preferred: official binding from @capacitor-community/admob
     try {
-      // Try to get the plugin from window (Capacitor plugins expose themselves here)
+      if (AdMobImport) return AdMobImport as unknown as AdMobPlugin;
+    } catch {
+      // ignore
+    }
+
+    // Fallback for older builds
+    try {
       const AdMob = (window as any).Capacitor?.Plugins?.AdMob || (window as any).AdMob;
       return AdMob || null;
     } catch {
