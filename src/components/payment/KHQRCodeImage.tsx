@@ -150,27 +150,33 @@ export const KHQRCodeImage = ({ qrCode, amount, checking, onCheckPayment }: KHQR
       const blob = await response.blob();
       const file = new File([blob], 'KHMERZOON-KHQR.png', { type: 'image/png' });
 
-      // Check if Web Share API with file sharing is supported
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: 'KHMERZOON KHQR Payment',
-          text: `Scan to pay $${amount.toFixed(2)}`,
-        });
-        toast.success('Share menu opened - select your banking app');
+      // Always try to open the system share sheet (preferred UX)
+      if (navigator.share) {
+        // Best case: share the actual image file
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'KHMERZOON KHQR Payment',
+            text: `Scan to pay $${amount.toFixed(2)}`,
+          });
+        } else {
+          // Fallback: still open share sheet (some browsers can't share files)
+          await navigator.share({
+            title: 'KHMERZOON KHQR Payment',
+            text: `Scan to pay $${amount.toFixed(2)} (open in your banking app)`,
+          });
+        }
+
+        toast.success('Share opened - select your banking app');
         return;
-      } else {
-        // Web Share not supported - show helpful message
-        toast.info('Please download the QR code and open it in your banking app');
-        downloadQRImage();
       }
+
+      // No share API support: do NOT auto-download, just guide the user
+      toast.info('Sharing not supported on this device. Use Download to save the QR image.');
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        return; // User cancelled share
-      }
+      if (error?.name === 'AbortError') return; // user cancelled
       console.error('Error sharing:', error);
-      toast.info('Please download the QR code and open it in your banking app');
-      downloadQRImage();
+      toast.info('Unable to open share. Use Download to save the QR image.');
     }
   };
 
