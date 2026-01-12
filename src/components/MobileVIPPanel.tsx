@@ -7,8 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import QRCode from 'react-qr-code';
 import { AuthDialog } from './AuthDialog';
+import { KHQRCodeImage } from './payment/KHQRCodeImage';
 
 interface MembershipPlan {
   id: string;
@@ -637,28 +637,12 @@ export function MobileVIPPanel({ open, onOpenChange }: MobileVIPPanelProps) {
           {/* QR View */}
           {view === 'qr' && qrCode && (
             <div className="space-y-4 max-w-md mx-auto">
-              <div className="bg-white rounded-xl p-4 flex justify-center">
-                <QRCode id="mobile-vip-qr" value={qrCode} size={200} />
-              </div>
-
-              <div className="text-center space-y-1">
-                <p className="text-lg font-semibold text-white">Scan to Pay ${parseFloat(topupAmount).toFixed(2)}</p>
-                <p className="text-sm text-white/50">Use any Cambodian banking app</p>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 text-white/50 text-sm">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Waiting for payment...
-              </div>
-
-              <Button
-                variant="outline"
-                onClick={manualCheckPayment}
-                disabled={checkingPayment}
-                className="w-full"
-              >
-                {checkingPayment ? 'Checking...' : 'I have paid'}
-              </Button>
+              <KHQRCodeImage
+                qrCode={qrCode}
+                amount={parseFloat(topupAmount)}
+                checking={checkingPayment}
+                onCheckPayment={manualCheckPayment}
+              />
             </div>
           )}
 

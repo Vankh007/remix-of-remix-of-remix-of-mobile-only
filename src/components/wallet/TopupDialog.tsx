@@ -6,7 +6,7 @@ import { Wallet, Loader2, QrCode, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import QRCode from 'react-qr-code';
+import { KHQRCodeImage } from '@/components/payment/KHQRCodeImage';
 
 interface TopupDialogProps {
   open: boolean;
@@ -269,28 +269,12 @@ export const TopupDialog = ({ open, onOpenChange, onSuccess, requiredAmount }: T
                 Back
               </Button>
 
-              <div className="bg-white rounded-lg p-4 flex justify-center">
-                <QRCode id="topup-qr-code" value={qrCode} size={220} />
-              </div>
-
-              <div className="text-center space-y-1">
-                <p className="text-lg font-semibold">Scan to Pay ${parseFloat(amount).toFixed(2)}</p>
-                <p className="text-sm text-muted-foreground">Use any Cambodian banking app</p>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Waiting for payment...
-              </div>
-
-              <Button
-                variant="outline"
-                onClick={manualCheckPayment}
-                disabled={checking}
-                className="w-full"
-              >
-                {checking ? 'Checking...' : 'I have paid'}
-              </Button>
+              <KHQRCodeImage
+                qrCode={qrCode}
+                amount={parseFloat(amount)}
+                checking={checking}
+                onCheckPayment={manualCheckPayment}
+              />
             </div>
           )}
 
