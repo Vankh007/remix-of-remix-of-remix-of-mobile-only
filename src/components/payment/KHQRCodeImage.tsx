@@ -148,34 +148,29 @@ export const KHQRCodeImage = ({ qrCode, amount, checking, onCheckPayment }: KHQR
       // Convert data URL to blob
       const response = await fetch(imageDataUrl);
       const blob = await response.blob();
+      const file = new File([blob], 'KHMERZOON-KHQR.png', { type: 'image/png' });
 
-      // Try Web Share API for mobile
-      const navAny = navigator as any;
-      if (navAny?.share) {
-        try {
-          const file = new File([blob], 'KHMERZOON-KHQR.png', { type: 'image/png' });
-          
-          if (navAny.canShare && navAny.canShare({ files: [file] })) {
-            await navAny.share({
-              files: [file],
-              title: 'KHMERZOON KHQR Payment',
-              text: `Scan to pay $${amount.toFixed(2)}`,
-            });
-            toast.success('Opening share menu...');
-            return;
-          }
-        } catch (shareError: any) {
-          if (shareError.name === 'AbortError') {
-            return; // User cancelled
-          }
-        }
+      // Check if Web Share API with file sharing is supported
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'KHMERZOON KHQR Payment',
+          text: `Scan to pay $${amount.toFixed(2)}`,
+        });
+        toast.success('Share menu opened - select your banking app');
+        return;
+      } else {
+        // Web Share not supported - show helpful message
+        toast.info('Please download the QR code and open it in your banking app');
+        downloadQRImage();
       }
-
-      // Fallback: download the image
-      downloadQRImage();
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        return; // User cancelled share
+      }
       console.error('Error sharing:', error);
-      downloadQRImage(); // Fallback to download
+      toast.info('Please download the QR code and open it in your banking app');
+      downloadQRImage();
     }
   };
 
