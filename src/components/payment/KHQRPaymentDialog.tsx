@@ -215,13 +215,10 @@ export const KHQRPaymentDialog = ({ isOpen, onClose, onSuccess }: KHQRPaymentDia
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-background via-background to-primary/5">
         <DialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <img src={logo} alt="KHMERZOON" className="w-12 h-12 object-contain" />
-            <div>
-              <DialogTitle className="text-2xl font-bold">KHMERZOON</DialogTitle>
-              <DialogDescription>Top Up Wallet using KHQR Payment</DialogDescription>
-            </div>
-          </div>
+          <DialogTitle className="flex items-center gap-2">
+            <QrCode className="w-5 h-5" />
+            Scan to Pay
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
