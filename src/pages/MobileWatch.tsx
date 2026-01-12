@@ -26,6 +26,7 @@ import { CommentsSection } from "@/components/CommentsSection";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { playWithExoPlayer, isExoPlayerAvailable } from "@/hooks/useExoPlayer";
 import { NativeBannerAdSlot } from "@/components/ads/NativeBannerAdSlot";
+import { MobileVIPPanel } from "@/components/MobileVIPPanel";
 
 interface Episode {
   id: string;
@@ -69,6 +70,7 @@ const MobileWatch = () => {
   const [loading, setLoading] = useState(true);
   const [forYouContent, setForYouContent] = useState<Content[]>([]);
   const [castMembers, setCastMembers] = useState<any[]>([]);
+  const [showVIPPanel, setShowVIPPanel] = useState(false);
 
   const contentType = type || "movie";
   const isSeriesContent = contentType === "series" || contentType === "anime";
@@ -348,10 +350,7 @@ const MobileWatch = () => {
           {/* Join VIP Button - Left side */}
           <button 
             className="flex flex-col items-center gap-1 px-3 py-1.5 bg-white/10 border border-white/20 rounded-lg backdrop-blur-sm"
-            onClick={() => {
-              const event = new CustomEvent('openSubscriptionDialog');
-              window.dispatchEvent(event);
-            }}
+            onClick={() => setShowVIPPanel(true)}
           >
             <Crown className="h-5 w-5 text-yellow-400" />
             <span className="text-[10px] text-yellow-400 font-medium">Join VIP</span>
@@ -603,6 +602,9 @@ const MobileWatch = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* VIP Membership Panel */}
+      <MobileVIPPanel open={showVIPPanel} onOpenChange={setShowVIPPanel} />
     </div>
   );
 };
