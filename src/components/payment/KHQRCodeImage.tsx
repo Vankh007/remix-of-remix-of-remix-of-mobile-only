@@ -208,15 +208,6 @@ export const KHQRCodeImage = ({ qrCode, amount, checking, onCheckPayment }: KHQR
         )}
       </div>
 
-      {/* Recommendation text */}
-      <div className="text-center space-y-1">
-        <p className="text-sm font-medium text-primary">
-          Save and open in your Banking App
-        </p>
-        <p className="text-xs text-muted-foreground">
-          ABA, ACLEDA, Wing, True Money, Ly Hour Pay Pro, etc.
-        </p>
-      </div>
 
       {/* Action buttons */}
       <div className="grid grid-cols-2 gap-3">
