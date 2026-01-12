@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { AdMob as AdMobImport } from '@capacitor-community/admob';
 import { supabase } from '@/integrations/supabase/client';
 
 // AdMob plugin type definitions (aligned with @capacitor-community/admob)
@@ -43,16 +44,26 @@ let bannerShowing = false;
  */
 export function getAdMobPlugin(): AdMobPlugin | null {
   if (admobPlugin) return admobPlugin;
-  
+
+  // Preferred: use the official JS binding from @capacitor-community/admob
+  // This is more reliable than reading from window.Capacitor.Plugins.
   try {
-    // Try to get from Capacitor Plugins
+    if (AdMobImport) {
+      admobPlugin = AdMobImport as unknown as AdMobPlugin;
+      return admobPlugin;
+    }
+  } catch {
+    // ignore
+  }
+
+  // Fallback: try to read from the global Capacitor plugins object
+  try {
     const plugins = (window as any).Capacitor?.Plugins;
     if (plugins?.AdMob) {
       admobPlugin = plugins.AdMob as AdMobPlugin;
       return admobPlugin;
     }
-    
-    // Try dynamic import for newer Capacitor versions
+
     return null;
   } catch (error) {
     console.error('[AdMob] Error getting plugin:', error);
